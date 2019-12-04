@@ -76,8 +76,12 @@ if [[ $? == 0 ]]; then
 	echo " - Additional config files can be added by attaching to the container and using the 'new-site' command."
 	echo " - Use 'new-site help' for clarification on required parameters."
 	echo "Starting nginx"
+	echo "---------------------------------------------------"
+	echo " "
+	echo " "
+	echo " "
 	nginx -q -c ${CONF} -g "daemon off;"
-	/bin/bash
+	
 else
 	echo " "
 	echo "---------------------------------------------------"
