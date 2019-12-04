@@ -1,8 +1,6 @@
 #!/bin/bash
 PREFIX=/etc/nginx
 SITES=${PREFIX}/sites
-#CONF=${SITES}/$2.conf
-
 
 
 help() {
@@ -35,20 +33,33 @@ if [ ! $2 == "ExampleApp" ] ; then
 	echo " - Container_Port: $3"
 	echo " - Listening_Port: $4"
 	echo " "
+	
+	# Ask if information is correct
 	read -p "Continue (y/n)?" choice
 	case "$choice" in 
 	  y|Y ) echo " ";;
 	  n|N ) exit;;
 	  * ) echo "invalid answer - exiting." && exit;;
 	esac
-
+	
+	# Check if filename already exists
+	if [ -e "${CONF}" ]; then
+		echo "filename already exists!"
+		read -p "Do you wish to over-write (y/n)?" choice
+		case "$choice" in 
+		y|Y ) cp ${CONF} ${CONF}.bak && rm ${CONF} && echo "File has been renamed $CONF.bak";;
+		n|N ) exit;;
+		* ) echo "invalid answer - exiting." && exit;;
+		esac
+	fi	
+	
 else
 	#Creating an Example File to be moved to /etc/nginx 
 	w "#----------------------------------------------------------------------------------------"
 	w "# This is an Example File of what should be used inside of the /etc/nginx/sites folder."
 	w "# Note: File extension should be '.conf' -- '.txt' was used in example so nginx ignores it."
 	w "#----------------------------------------------------------------------------------------"
-	w "# This script was built using the command ' new-site build Example ExampleApp 80 8090 '"
+	w "# This file was built using the command ' new-site build Example ExampleApp 80 8090 '"
 	w "#   - Replace 'Example' with your desired filename."
 	w "#   - Replace 'ExampleApp' with the container's name for nginx to forward traffix to."
 	w "#   - Replace '80' with the port number the destination container is listening on."
@@ -57,17 +68,6 @@ else
 	w "#"		
 	w "#"
 fi
-#----------------------------------------------------------------------------------------------------------	
-#Check if filename already exists
-if [ -e "${CONF}" ]; then
-	echo "filename already exists!"
-	read -p "Do you wish to over-write (y/n)?" choice
-	case "$choice" in 
-	  y|Y ) cp ${CONF} ${CONF}.bak && rm ${CONF} && echo "File has been renamed $CONF.bak";;
-	  n|N ) exit;;
-	  * ) echo "invalid answer - exiting." && exit;;
-	esac
-fi	
 
 #----------------------------------------------------------------------------------------------------------	
 #Create the config file 
@@ -99,6 +99,11 @@ fi
   w "	}"
   w ""
   
+#----------------------------------------------------------------------------------------------------------	  
+# If creating the Example_Site.txt file, no more needs to happen.
+if [ $2 == "ExampleApp" ] ; then
+	exit
+fi
 #----------------------------------------------------------------------------------------------------------	
 #Verify Config Files
 echo "///////////////////////////////////////////////////////////////////////"

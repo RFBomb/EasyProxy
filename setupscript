@@ -52,7 +52,8 @@ fi
 #----------------------------------------------------------------------------------------------------------	
 #Create an example config if one does not exist.
 if [ ! -e "${PREFIX}/EXAMPLE_Site.txt" ]; then
-	new-site build Example ExampleApp 80 8090
+	new-site build 'Example' 'ExampleApp' '80' '8090'
+	echo "Moving /etc/nginx/sites/Example.Conf to /etc/nginx/Example_Site.txt"
 	mv ${SITES}/Example.conf  ${PREFIX}/EXAMPLE_Site.txt
 fi
 
@@ -60,8 +61,6 @@ fi
 #Verify Config Files
 echo "---------------------------------------------------"
 echo " - Verifying nginx configuration files"
-#----------------------------------------------------------------------------------------------------------	
-#Create the 'Example.conf' file if no config file exists
 if [ "$(ls -a ${SITES} | grep *.conf )" ]; then
 	echo "    !!! No proxy configs exist !!!  "
 fi
@@ -83,6 +82,6 @@ else
 	echo " "
 	echo "---------------------------------------------------"
 	echo "Bad Config Files -- Exiting."
-	nginx -t -c ${CONF} >> ${ErrLog}
+	nginx -t -c ${CONF} &> ${ErrLog}
 	exit 1
 fi

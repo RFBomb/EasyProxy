@@ -3,11 +3,10 @@
 This is a simple Reverse Proxy container, designed to make creating reverse proxies super easy. 
 When I learning how to set this up, I had a bunch of issues getting my containers to talk to each other outside of my NordVPN image.
 Once I figured out how to do it, I built a script to automate the setup of additional proxies. 
-See the 'Usage' section for details on the script itself. 
+See the 'Scripts' section for details on the script itself. 
 
 ## About the Image
 * This is just an official nginx image with a custom script installed into it, and bash installed to run the script. Nothing fancy. 
-* I have this working on a Raspberry Pi 4. If you need it for a non-ARM system, just download the git repository and build it from the dockerfile, it should only take a moment.
 
 ## Scripts
 The image contains 3 custom scripts. Only 2 of them are actually used.
@@ -27,7 +26,7 @@ The image contains 3 custom scripts. Only 2 of them are actually used.
 	- This script came from another reverse-proxy help thread (that was really not much help). Its included if someone else wants to figure it out.
 	- This script is probably useful if another container goes down. Nginx does not like starting up if if cannot see all configured upstreams, so this script may solve that. I just haven't looked into it. 
 	
-* `new-site'
+* `new-site`
 	- This script is stored in /usr/bin so that it can be easily called when attaching to the container
 	- `new-site` help produces a short help guide.
 	- `new-site build' will save a new conf file to /etc/nginx/sites. All parameters below are required.
