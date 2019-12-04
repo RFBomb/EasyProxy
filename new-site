@@ -1,0 +1,128 @@
+#!/bin/bash
+PREFIX=/etc/nginx
+SITES=${PREFIX}/sites
+#CONF=${SITES}/$2.conf
+
+
+
+help() {
+	echo " "
+	echo " "
+	echo "Use this script to easily generate another container for nginx to proxy to."
+	echo "Command to add a new site: new-site build {All Parameters Required}"
+	echo "Parameters required are as follows: {Specify them in this order}"
+	echo " - filename {.conf is appended to this, so for Serrvice.conf you would just use 'service' }"
+	echo " - container ID -- name of the container / how nginx will identify which one to look at"
+	echo " - Container Port  -- which port is exposed on the container for nginx to point to."
+	echo " - Listen Port -- Which port nginx listens to. Any traffic seen on this port will be forward to the container port noted above."
+	echo " "
+	echo "for multiple ports, you can just use this script to generate the requires files, or edit them after the first one is generated."
+	echo " "
+	echo " "
+	}	
+	
+	
+w() { echo "$1" >> ${CONF}; }
+
+build() {
+CONF=${SITES}/$1.conf
+if [ ! $2 == "ExampleApp" ] ; then
+	#Creating actual usable config file
+	echo " "
+	echo "Preparing to build with the following settings:"
+	echo " - Filename: $CONF"
+	echo " - Container_ID: $2"
+	echo " - Container_Port: $3"
+	echo " - Listening_Port: $4"
+	echo " "
+	read -p "Continue (y/n)?" choice
+	case "$choice" in 
+	  y|Y ) echo " ";;
+	  n|N ) exit;;
+	  * ) echo "invalid answer - exiting." && exit;;
+	esac
+
+else
+	#Creating an Example File to be moved to /etc/nginx 
+	w "#----------------------------------------------------------------------------------------"
+	w "# This is an Example File of what should be used inside of the /etc/nginx/sites folder."
+	w "# Note: File extension should be '.conf' -- '.txt' was used in example so nginx ignores it."
+	w "#----------------------------------------------------------------------------------------"
+	w "# This script was built using the command ' new-site build Example ExampleApp 80 8090 '"
+	w "#   - Replace 'Example' with your desired filename."
+	w "#   - Replace 'ExampleApp' with the container's name for nginx to forward traffix to."
+	w "#   - Replace '80' with the port number the destination container is listening on."
+	w "#   - Replace '8090' with the port the nginx proxy is listening on."
+	w "#----------------------------------------------------------------------------------------"
+	w "#"		
+	w "#"
+fi
+#----------------------------------------------------------------------------------------------------------	
+#Check if filename already exists
+if [ -e "${CONF}" ]; then
+	echo "filename already exists!"
+	read -p "Do you wish to over-write (y/n)?" choice
+	case "$choice" in 
+	  y|Y ) cp ${CONF} ${CONF}.bak && rm ${CONF} && echo "File has been renamed $CONF.bak";;
+	  n|N ) exit;;
+	  * ) echo "invalid answer - exiting." && exit;;
+	esac
+fi	
+
+#----------------------------------------------------------------------------------------------------------	
+#Create the config file 
+  echo "-------------------------------------------------"
+  echo "Creating $CONF file"
+  w "# Example taken from here: "
+  w "# https://serverfault.com/questions/706694/use-nginx-as-reverse-proxy-for-multiple-servers "
+  w "# https://www.thepolyglotdeveloper.com/2017/03/nginx-reverse-proxy-containerized-docker-applications/"
+  w " "
+  w "#add as many 'upstreams' and 'server' sections as needed for the number of containers/ports you require."
+  w " "
+  w "	upstream $1 {"
+  w "		server $2:$3;"
+  w "	}"
+  w " "
+  w " "
+  w "	server {"
+  w "		listen 	$4;"
+  w "		server_name $1;"
+  w " "
+  w "		location / {"
+  w "			proxy_pass 			http://$1;"
+  w "			proxy_redirect		off;"
+  w "			proxy_set_header   	Host \$host;"
+  w "      		proxy_set_header   	X-Real-IP \$remote_addr;"
+  w "      		proxy_set_header   	X-Forwarded-For \$proxy_add_x_forwarded_for;"
+  w "      		proxy_set_header   	X-Forwarded-Host \$server_name;"
+  w "		}"
+  w "	}"
+  w ""
+  
+#----------------------------------------------------------------------------------------------------------	
+#Verify Config Files
+echo "///////////////////////////////////////////////////////////////////////"
+echo " - Running 'nginx -t -c ${PREFIX}/nginx.conf' to verify config files"
+echo " "
+echo " "
+nginx -t -c ${PREFIX}/nginx.conf
+
+#----------------------------------------------------------------------------------------------------------	
+# Start the nginx server 
+if [[ $? == 0 ]]; then
+	echo " "
+	echo "///////////////////////////////////////////////////////////////////////"
+	echo "All conf files have been verified."
+	echo "Restart container to apply changes."
+else
+	echo " "
+	echo "///////////////////////////////////////////////////////////////////////"
+	echo "Error Detected."
+fi
+	echo "---------------------------------------------------"
+echo " "
+echo " "
+}
+
+#Command - Filename - Container_ID - Container_Port - Listening_Port
+$1 $2 $3 $4 $5

@@ -1,0 +1,88 @@
+#!/bin/bash
+PREFIX=/etc/nginx
+SITES=${PREFIX}/sites
+
+CONF=${PREFIX}/nginx.conf
+ErrLog=${PREFIX}/ErrLog.txt
+
+#Routines to write data to files 
+w() { echo "$1" >> ${CONF}; }
+
+echo " "
+echo " "
+echo " "
+echo " "
+echo " "
+echo " "
+
+echo "////////////////////////////////////////////////////"
+echo "Checking for existing Configuration Files"
+echo "////////////////////////////////////////////////////"
+
+#----------------------------------------------------------------------------------------------------------	
+#Remove the Error Log if it exists (Only keep last log)
+if [ -e "${ErrLog}" ]; then
+	rm ${ErrLog}
+fi
+
+#----------------------------------------------------------------------------------------------------------	
+#Create the 'nginx.conf' file if it is missing	
+if [ ! -e "${CONF}" ]; then
+	echo " - Creating nginx.conf File"
+	w " "
+	w "worker_processes 1;"
+	w " "
+	w "events {"
+	w "    worker_connections 1024;"
+	w "}"
+	w " "
+	w "http {"
+	w "	sendfile on;"
+	w "	include /etc/nginx/sites/*.conf;"
+	w "}"
+fi	
+
+#----------------------------------------------------------------------------------------------------------	
+#Create the 'conf_files' directory if it is missing	
+if [ ! -d "${SITES}" ]; then
+  echo " - '${SITES}' directory is missing. -- Creating directory. Store custom config files here."
+  mkdir "${SITES}"
+fi
+
+#----------------------------------------------------------------------------------------------------------	
+#Create an example config if one does not exist.
+if [ ! -e "${PREFIX}/EXAMPLE_Site.txt" ]; then
+	new-site build Example ExampleApp 80 8090
+	mv ${SITES}/Example.conf  ${PREFIX}/EXAMPLE_Site.txt
+fi
+
+#----------------------------------------------------------------------------------------------------------	
+#Verify Config Files
+echo "---------------------------------------------------"
+echo " - Verifying nginx configuration files"
+#----------------------------------------------------------------------------------------------------------	
+#Create the 'Example.conf' file if no config file exists
+if [ "$(ls -a ${SITES} | grep *.conf )" ]; then
+	echo "    !!! No proxy configs exist !!!  "
+fi
+echo " "
+nginx -t -c ${CONF}
+
+#----------------------------------------------------------------------------------------------------------	
+# Start the nginx server 
+if [[ $? == 0 ]]; then
+	echo " "
+	echo "---------------------------------------------------"
+	echo "All conf files have been verified."
+	echo " - Additional config files can be added by attaching to the container and using the 'new-site' command."
+	echo " - Use 'new-site help' for clarification on required parameters."
+	echo "Starting nginx"
+	nginx -q -c ${CONF} -g "daemon off;"
+	/bin/bash
+else
+	echo " "
+	echo "---------------------------------------------------"
+	echo "Bad Config Files -- Exiting."
+	nginx -t -c ${CONF} >> ${ErrLog}
+	exit 1
+fi
